@@ -39,8 +39,8 @@ Request Format:
 This route processes a PDF file by chunking it into smaller parts and storing these chunks in the folder db.
 
 Key: file
-Value: Name of the PDF file (e.g., PrinciplesOfBiology.pdf)
-The generated vector_store stored in the db folder will be used in the /ask_pdf route.
+<br> Value: Name of the PDF file (e.g., PrinciplesOfBiology.pdf)
+<br> The generated vector_store stored in the db folder will be used in the /ask_pdf route.
 
 ### 3. /ask_pdf
 This route combines Retrieval-Augmented Generation (RAG) and an LLM model via the Hugging Face API.
