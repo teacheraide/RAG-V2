@@ -1,12 +1,3 @@
-## Requirements
-
-- **Python Version**: Ensure you are using **Python 3.10**.
-- **Dependencies**: Install all dependencies listed in `requirements.txt` using the command:
-
-  ```bash
-  pip install -r requirements.txt
-  ```
-  
 ## Virtual Environment
 It is strongly recommended to use a virtual environment to maintain an isolated environment for the project.
 
@@ -22,6 +13,14 @@ Create the virtual environment
   venv\Scripts\activate
   ```
 
+## Requirements
+
+- **Python Version**: Ensure you are using **Python 3.10**.
+- **Dependencies**: Install all dependencies listed in `requirements.txt` using the command:
+
+  ```bash
+  pip install -r requirements.txt
+  ```
 ## Routes Overview
 The Flask app provides the following three routes:
 
