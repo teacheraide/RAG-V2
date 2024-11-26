@@ -15,7 +15,7 @@ Create the virtual environment
 
 ## Requirements
 
-- **Python Version**: Ensure you are using **Python 3.10**.
+- **Python Version**: Ensure you are using **Python 3.10**. You can download this version from Python official website and add it to the PATH when installing.
 - **Dependencies**: Install all dependencies listed in `requirements.txt` using the command:
 
   ```bash
