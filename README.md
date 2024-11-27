@@ -46,10 +46,11 @@ Key: file
 This route combines Retrieval-Augmented Generation (RAG) and an LLM model via the Hugging Face API.
 
 Request Format:
+### Note that max_tokens should be small (such as 500)
 ```bash
 {
   "prompt": "how big is brisbane",
   "temperature": 0.7,
-  "max_tokens": 5000
+  "max_tokens": 500
 }
 ```
