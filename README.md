@@ -45,8 +45,8 @@ Key: file
 ### 3. /ask_pdf
 This route combines Retrieval-Augmented Generation (RAG) and an LLM model via the Hugging Face API.
 
-```bash
 Request Format:
+```bash
 {
   "prompt": "how big is brisbane",
   "temperature": 0.7,
