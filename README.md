@@ -49,7 +49,7 @@ Key: file
 This route combines Retrieval-Augmented Generation (RAG) and an LLM model via the Hugging Face API.
 
 Request Format:
-### Note that max_tokens should be small (such as 500)
+### Note that max_tokens should be small (such as 2000)
 ```bash
 {
     "chat_id": "12345",
