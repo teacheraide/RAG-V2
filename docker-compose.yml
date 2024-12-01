@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./local_cache:/app/local_cache
+    ports:
+      - "8000:8000"
