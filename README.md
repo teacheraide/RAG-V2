@@ -30,9 +30,12 @@ A basic route that interacts with the Hugging Face API to generate answers.
 Request Format:
 ```bash
 {
-  "prompt": "how big is brisbane",
-  "temperature": 0.7,
-  "max_tokens": 5000
+    "chat_id": "12345",
+    "messages": [
+        {"role": "user", "content": "Hello!"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 1000
 }
   ```
 ### 2. /pdf
@@ -49,8 +52,11 @@ Request Format:
 ### Note that max_tokens should be small (such as 500)
 ```bash
 {
-  "prompt": "how big is brisbane",
-  "temperature": 0.7,
-  "max_tokens": 500
+    "chat_id": "12345",
+    "messages": [
+        {"role": "user", "content": "Where is Prophase?"}
+    ],
+    "temperature": 0.7,
+    "max_tokens": 3000
 }
 ```
