@@ -25,7 +25,7 @@ folder_path = "db"
 
 # Hugging Face API key and endpoint
 api_key = os.getenv("HF_API_KEY")
-model_name = os.getenv("HF_MODEL_NAME")
+model_name = "microsoft/Phi-3-mini-4k-instruct"
 hf_endpoint = f"https://api-inference.huggingface.co/models/{model_name}"
 
 embedding = HuggingFaceInferenceAPIEmbeddings(
