@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 import requests
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -10,6 +10,7 @@ from langchain.prompts import PromptTemplate
 import os
 
 app = Flask(__name__)
+app.secret_key = 'teacheraide'  # Required for session handling
 
 text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=1024, chunk_overlap=80, length_function=len, is_separator_regex=False
@@ -27,34 +28,67 @@ hf_endpoint = "https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-
 def aiPost():
     print("Post /ai called")
 
+    # Validate input data
     data = request.get_json()
+    if not data or "messages" not in data or "chat_id" not in data:
+        return jsonify({"error": "Invalid request, 'messages' and 'chat_id' fields are required"}), 400
 
-    if not data or 'prompt' not in data:
-        return jsonify({"error": "Invalid request, 'prompt' field is required"}), 400
-    
+    # Retrieve chat_id
+    chat_id = data["chat_id"]
+    print(f"Processing chat ID: {chat_id}")
+
+    # Restrict to the last user message
+    last_message = data["messages"][-1]["content"]
+
+    conversation = "\n".join([f"{m['role'].capitalize()}: {m['content']}" for m in data["messages"]])
+    hf_payload = {
+        "inputs": f"{conversation}\nAssistant:",
+        "parameters": {
+            "temperature": data.get("temperature", 0.3),
+            "max_new_tokens": data.get("max_tokens", 500),
+            "stop_sequence": ["\nUser:"],  # Prevent the model from continuing user messages
+        }
+    }
+
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
     }
 
-    payload = {
-        "inputs": data['prompt'],  # You can customize this based on the model type
-        "parameters": {
-            "temperature": data.get("temperature", 0.7),
-            "max_length": data.get("max_tokens", 1000)
-        }
-    }    
-
     try:
-        response = requests.post(hf_endpoint, headers=headers, json=payload)
-        response.raise_for_status()  # Raise an error for bad status codes
-        result = response.json()
+        # Make API call to Hugging Face
+        response = requests.post(hf_endpoint, headers=headers, json=hf_payload)
+        response.raise_for_status()
+        hf_result = response.json()
 
-        # Return the result back to the client
-        return jsonify(result)
+        # Extract response content
+        generated_text = hf_result[0].get("generated_text", "") if isinstance(hf_result, list) else hf_result.get("generated_text", "")
+
+        # Format response to mimic OpenAI's structure
+        openai_response = {
+            "chat_id": chat_id,  # Include chat_id in the response
+            "id": "hf-chat",
+            "object": "chat.completion",
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": generated_text.strip()},
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {
+                "prompt_tokens": len(last_message.split()),
+                "completion_tokens": len(generated_text.split()),
+                "total_tokens": len(last_message.split()) + len(generated_text.split())
+            }
+        }
+
+        return jsonify(openai_response)
 
     except requests.exceptions.RequestException as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"chat_id": chat_id, "error": f"API request error: {str(e)}"}), 500
+    except KeyError as e:
+        return jsonify({"chat_id": chat_id, "error": f"Response parsing error: {str(e)}"}), 500
+
 
 @app.route("/pdf", methods=["POST"])
 def pdfPost():
@@ -102,9 +136,12 @@ def askPDFPost():
     data = request.get_json()
 
     # Validate request data
-    prompt = data.get("prompt")
-    if not prompt:
-        return {"error": "prompt is required"}, 400
+    if not data or "messages" not in data or "chat_id" not in data:
+        return jsonify({"error": "Invalid request, 'messages' and 'chat_id' fields are required"}), 400
+
+    chat_id = data["chat_id"]
+    prompt = data["messages"][-1]["content"]  # Get the last user message
+    print(f"Processing chat ID: {chat_id}, prompt: {prompt}")
 
     # Default values for parameters
     temperature = data.get("temperature", 0.7)
@@ -131,7 +168,7 @@ def askPDFPost():
 
         # If no relevant documents are found, return "no related answer"
         if not docs:
-            return jsonify({"answer": "no related answer"})
+            return jsonify({"chat_id": chat_id, "error": "No related answer found"}), 400
 
         # Limit context length to prevent exceeding model token limits
         max_context_length = 1024  # Define a reasonable length for context
@@ -169,25 +206,41 @@ def askPDFPost():
 
         # If the result is empty or not relevant, return "no related answer"
         if not generated_text or "irrelevant" in generated_text.lower():
-            return jsonify({"answer": "no related answer"})
+            return jsonify({"chat_id": chat_id, "error": "No relevant answer found"}), 400
 
-        # If relevant, combine the RAG answer with the original prompt
-        combined_answer = f"Prompt: {prompt}\nAnswer: {generated_text}"
+        # Format the response to mimic OpenAI's structure
+        openai_response = {
+            "chat_id": chat_id,  # Include chat_id in the response
+            "id": "hf-chat",
+            "object": "chat.completion",
+            "choices": [
+                {
+                    "message": {"role": "assistant", "content": generated_text.strip()},
+                    "finish_reason": "stop"
+                }
+            ],
+            "usage": {
+                "prompt_tokens": len(prompt.split()),
+                "completion_tokens": len(generated_text.split()),
+                "total_tokens": len(prompt.split()) + len(generated_text.split())
+            }
+        }
 
-        # Prepare response with sources
+        # Prepare sources (optional)
         sources = [
             {"source": doc.metadata.get("source", "unknown"), "page_content": doc.page_content}
             for doc in docs
         ]
 
-        return {"answer": combined_answer, "sources": sources}
+        return jsonify({"answer": generated_text, "sources": sources, "openai_response": openai_response})
 
     except requests.exceptions.RequestException as e:
         print(f"Error during API call: {e}")
-        return {"error": f"API request error: {str(e)}"}, 500
+        return jsonify({"chat_id": chat_id, "error": f"API request error: {str(e)}"}), 500
     except Exception as e:
         print(f"Error during processing: {e}")
-        return {"error": f"Processing error: {str(e)}"}, 500
+        return jsonify({"chat_id": chat_id, "error": f"Processing error: {str(e)}"}), 500
+        
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
