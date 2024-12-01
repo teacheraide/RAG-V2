@@ -3,7 +3,8 @@ import requests
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import (
-    HuggingFaceInferenceAPIEmbeddings
+    HuggingFaceInferenceAPIEmbeddings,
+    FastEmbedEmbeddings
 )
 from langchain_community.document_loaders import PDFPlumberLoader
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -28,10 +29,7 @@ api_key = os.getenv("HF_API_KEY")
 model_name = "microsoft/Phi-3-mini-4k-instruct"
 hf_endpoint = f"https://api-inference.huggingface.co/models/{model_name}"
 
-embedding = HuggingFaceInferenceAPIEmbeddings(
-    api_key=api_key,
-    model_name=model_name,
-)
+embedding = FastEmbedEmbeddings()
 
 print("api_key: ", api_key)
 print("model_name: ", model_name)
