@@ -2,12 +2,17 @@ from flask import Flask, request, jsonify, session
 import requests
 from langchain_community.vectorstores import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+from langchain_community.embeddings import (
+    HuggingFaceInferenceAPIEmbeddings
+)
 from langchain_community.document_loaders import PDFPlumberLoader
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain.chains import create_retrieval_chain
 from langchain.prompts import PromptTemplate
+from dotenv import load_dotenv
 import os
+
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = 'teacheraide'  # Required for session handling
@@ -18,11 +23,19 @@ text_splitter = RecursiveCharacterTextSplitter(
 
 folder_path = "db"
 
-embedding = FastEmbedEmbeddings()
-
 # Hugging Face API key and endpoint
-api_key = "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"
-hf_endpoint = "https://api-inference.huggingface.co/models/microsoft/Phi-3-mini-4k-instruct"
+api_key = os.getenv("HF_API_KEY")
+model_name = os.getenv("HF_MODEL_NAME")
+hf_endpoint = f"https://api-inference.huggingface.co/models/{model_name}"
+
+embedding = HuggingFaceInferenceAPIEmbeddings(
+    api_key=api_key,
+    model_name=model_name,
+)
+
+print("api_key: ", api_key)
+print("model_name: ", model_name)
+print("hf_endpoint: ", hf_endpoint)
 
 @app.route("/ai", methods=["POST"])
 def aiPost():
@@ -241,6 +254,9 @@ def askPDFPost():
         print(f"Error during processing: {e}")
         return jsonify({"chat_id": chat_id, "error": f"Processing error: {str(e)}"}), 500
         
+host = os.getenv("HOST") or "0.0.0.0"        
+port = os.getenv("PORT") or 8000
+debug = os.getenv("DEBUG") or False
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host=host, port=port, debug=debug)
