@@ -35,6 +35,10 @@ print("api_key: ", api_key)
 print("model_name: ", model_name)
 print("hf_endpoint: ", hf_endpoint)
 
+@app.route("/healthz", methods=["GET"])
+def healthz():
+    return "OK"
+
 @app.route("/ai", methods=["POST"])
 def aiPost():
     print("Post /ai called")
