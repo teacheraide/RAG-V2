@@ -1,3 +1,19 @@
+# Quick start
+
+To run this project you will need a Hugging Face API Key, create one [here](https://huggingface.co/settings/tokens)
+
+a `Read` token is enough to run this project
+
+## Start server with docker compose
+
+copy `.env.sample` to `.env` and add your Hugging Face API Key
+
+```
+docker compose up
+```
+
+# Development
+
 ## Virtual Environment
 
 It is strongly recommended to use a virtual environment to maintain an isolated environment for the project.
